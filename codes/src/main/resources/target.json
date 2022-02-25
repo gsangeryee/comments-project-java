@@ -1,0 +1,52 @@
+{
+    "code": "0",
+    "message": "success",
+    "data":
+    [
+        {
+            "id": 3,
+            "comment": "This is Alan's second comment",
+            "parentId": 0,
+            "username": "Alan",
+            "children": null
+        },
+        {
+            "id": 2,
+            "comment": "This is Bob's first comment",
+            "parentId": 0,
+            "username": "Bob",
+            "children": null
+        },
+        {
+            "id": 1,
+            "comment": "This is Alan's first comment",
+            "parentId": 0,
+            "username": "Alan",
+            "children": [
+                {
+                    "id": 4,
+                    "comment": "This is Cindy's reply to Alan's comment",
+                    "parentId": 1,
+                    "username": "Cindy",
+                    "children": [
+                        {
+                            "id": 5,
+                            "comment": "This is Bob's reply to Cindy's reply",
+                            "parentId": 4,
+                            "username": "Bob",
+                            "children": null
+                        }
+                    ]
+                },
+                {
+                    "id": 6,
+                    "comment": "This is David's reply to Alan's commen",
+                    "parentId": 1,
+                    "username": "David",
+                    "children": null
+                }
+            ]
+        }
+    ]
+}
+
