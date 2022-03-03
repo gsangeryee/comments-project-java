@@ -16,7 +16,7 @@ import java.time.Instant;
 public class RefreshToken {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
+    private long id;
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;

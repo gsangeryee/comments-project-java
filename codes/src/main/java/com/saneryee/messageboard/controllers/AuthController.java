@@ -82,7 +82,7 @@ public class AuthController {
   @PostMapping("/login")
   public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
 
-
+    // authenticate user with username and password
     Authentication authentication = authenticationManager.authenticate(
         new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
@@ -90,15 +90,19 @@ public class AuthController {
 
     UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-    String jwt = jwtUtils.generateJwtToken(userDetails);
+    // generate access token using jwt utils
+    String accessToken = jwtUtils.generateJwtToken(userDetails);
 
     List<String> roles = userDetails.getAuthorities().stream()
         .map(item -> item.getAuthority())
         .collect(Collectors.toList());
 
+    // TODO: add remember me control: if remember me is checked, generate refresh token and save it to database
+    // generate refresh token
     RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getId());
+
     return ResponseEntity.ok(
-            new JwtResponse(jwt,
+            new JwtResponse(accessToken,
                     refreshToken.getToken(),
                     userDetails.getId(),
                     userDetails.getUsername(),
@@ -161,18 +165,30 @@ public class AuthController {
     return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
   }
 
+  /**
+   * Refresh token
+   * @param request
+   * @return
+   */
   @PostMapping("/refreshtoken")
   public ResponseEntity<?>refreshtoken(@Valid @RequestBody TokenRefreshRequest request){
+    // Get refresh token from request
     String requestRefreshToken = request.getRefreshToken();
 
+    // 1. Get the RefreshToken object {id, user, token, expiryDate} from database using RefreshTokenService
+    // 2. Verify the refresh token (expired or not) basing on the expiryDate.
+    // 3. If the refresh token is valid, generate a new access token using JwtUtils with user.
+    // 4. Return TokenResponse with access token and refresh token.
+    // 5. If the refresh token is not valid, return an error message.
     return refreshTokenService.findByToken(requestRefreshToken)
             .map(refreshTokenService::verifyRefreshToken)
-            .map(RefreshToken::getUser)
+            .map(RefreshToken::getUser)// get user field from RefreshToken object
             .map(user -> {
               String token = jwtUtils.generateTokenFromUsername(user.getUsername());
               return ResponseEntity.ok(new TokenRefreshResponse(token, requestRefreshToken));
             })
-            .orElseThrow(() -> new TokenRefreshException(requestRefreshToken, "Refresh token is not in database!"));
+            .orElseThrow(() -> new TokenRefreshException(
+                    requestRefreshToken, "Refresh token is not in database!"));
 
   }
 

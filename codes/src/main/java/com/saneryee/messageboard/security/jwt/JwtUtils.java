@@ -33,11 +33,6 @@ public class JwtUtils {
   @Value("${saneryee.app.jwtExpirationMs}")
   private int jwtExpirationMs;
 
-  // New version  in JJWT 0.11
-  byte[] keyBytes = Decoders.BASE64.decode(jwtSecretKey);
-
-  Key key = Keys.hmacShaKeyFor(keyBytes);
-
   /**
    * Generate a JWT token using UserDetailsImpl
    * @param userPrincipal
@@ -48,11 +43,17 @@ public class JwtUtils {
   }
 
   /**
-   * Generate a JWT token using usernaame,date,expiration time,secret key.
+   * Generate a JWT token using username,date,expiration time,secret key.
    * @param username
    * @return  JWT token
    */
   public String generateTokenFromUsername(String username){
+
+    // New version  in JJWT 0.11
+    byte[] keyBytes = Decoders.BASE64.decode(jwtSecretKey);
+
+    Key key = Keys.hmacShaKeyFor(keyBytes);
+
     return Jwts.builder().setSubject(username)
             .setIssuedAt(new Date())
             .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))

@@ -71,7 +71,7 @@ public class CommentController {
 
   
   @PostMapping("/new")
-  //@PreAuthorize("hasRole('USER')")
+  @PreAuthorize("hasRole('USER')")
   public ResponseEntity<Comment> createComment(@RequestBody Comment comment) {
     try {
       Comment _comment = commentRepository

@@ -1,4 +1,4 @@
-package com.saneryee.messageboard.security.jwt.advice;
+package com.saneryee.messageboard.advice;
 
 import java.util.Date;
 
