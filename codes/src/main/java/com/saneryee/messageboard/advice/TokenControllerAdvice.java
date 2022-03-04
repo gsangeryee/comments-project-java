@@ -1,6 +1,6 @@
 package com.saneryee.messageboard.advice;
 
-import com.saneryee.messageboard.security.jwt.exception.TokenRefreshException;
+import com.saneryee.messageboard.exception.TokenRefreshException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;

@@ -12,18 +12,22 @@ package com.saneryee.messageboard.security.services;
 import com.saneryee.messageboard.models.RefreshToken;
 import com.saneryee.messageboard.repository.RefreshTokenRepository;
 import com.saneryee.messageboard.repository.UserRepository;
-import com.saneryee.messageboard.security.jwt.exception.TokenRefreshException;
+import com.saneryee.messageboard.exception.TokenRefreshException;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
 import javax.transaction.Transactional;
 import java.beans.Transient;
+import java.security.DigestException;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class RefreshTokenService {
     @Value("${saneryee.app.jwtRefreshExpirationMS}")
     private Long refreshTokenDurationMS;
@@ -50,11 +54,8 @@ public class RefreshTokenService {
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(userRepository.findById(userId).get());
         refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMS));
-        //TODO: generate refresh token using Jwt
-
         refreshToken.setToken(UUID.randomUUID().toString());
         refreshToken =  refreshTokenRepository.save(refreshToken);
-
         return refreshToken;
     }
 

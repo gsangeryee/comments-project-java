@@ -1,4 +1,4 @@
-package com.saneryee.messageboard.security.jwt.exception;
+package com.saneryee.messageboard.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

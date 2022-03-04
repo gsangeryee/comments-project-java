@@ -3,8 +3,10 @@ package com.saneryee.messageboard.controllers;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import javax.crypto.KeyGenerator;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
@@ -12,14 +14,20 @@ import com.saneryee.messageboard.models.RefreshToken;
 import com.saneryee.messageboard.payload.request.LogOutRequest;
 import com.saneryee.messageboard.payload.request.TokenRefreshRequest;
 import com.saneryee.messageboard.payload.response.TokenRefreshResponse;
-import com.saneryee.messageboard.security.jwt.exception.TokenRefreshException;
+import com.saneryee.messageboard.exception.TokenRefreshException;
 import com.saneryee.messageboard.security.services.RefreshTokenService;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.encrypt.Encryptors;
+import org.springframework.security.crypto.encrypt.TextEncryptor;
+import org.springframework.security.crypto.keygen.KeyGenerators;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.NullRememberMeServices;
 import org.springframework.security.web.authentication.RememberMeServices;
@@ -60,6 +68,7 @@ import com.saneryee.messageboard.security.services.UserDetailsImpl;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/auth")
+@Slf4j
 public class AuthController {
   @Autowired
   AuthenticationManager authenticationManager;
@@ -78,6 +87,12 @@ public class AuthController {
 
   @Autowired
   RefreshTokenService refreshTokenService;
+
+  @Value("${saneryee.app.jwtSecretKey}")
+  private String jwtSecretKey;
+
+  @Value("${saneryee.app.salt}")
+  private String serverSalt;
 
   @PostMapping("/login")
   public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
@@ -100,10 +115,16 @@ public class AuthController {
     // TODO: add remember me control: if remember me is checked, generate refresh token and save it to database
     // generate refresh token
     RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getId());
+    // Using AES to encrypt refresh token
+    //String salt = KeyGenerators.string().generateKey();
+    //log.info("salt: " + salt);
+    TextEncryptor encryptor = Encryptors.text(jwtSecretKey,serverSalt);
+    String encryptedRefreshToken = encryptor.encrypt(refreshToken.getToken());
+
 
     return ResponseEntity.ok(
             new JwtResponse(accessToken,
-                    refreshToken.getToken(),
+                    encryptedRefreshToken,
                     userDetails.getId(),
                     userDetails.getUsername(),
                     userDetails.getEmail(),
@@ -174,13 +195,16 @@ public class AuthController {
   public ResponseEntity<?>refreshtoken(@Valid @RequestBody TokenRefreshRequest request){
     // Get refresh token from request
     String requestRefreshToken = request.getRefreshToken();
-
+    TextEncryptor decryptor = Encryptors.text(jwtSecretKey,serverSalt);
+    String decryptedRefreshToken = decryptor.decrypt(requestRefreshToken);
+    log.info("Decrypted refresh token: " + decryptedRefreshToken);
     // 1. Get the RefreshToken object {id, user, token, expiryDate} from database using RefreshTokenService
     // 2. Verify the refresh token (expired or not) basing on the expiryDate.
     // 3. If the refresh token is valid, generate a new access token using JwtUtils with user.
     // 4. Return TokenResponse with access token and refresh token.
     // 5. If the refresh token is not valid, return an error message.
-    return refreshTokenService.findByToken(requestRefreshToken)
+
+    return refreshTokenService.findByToken(decryptedRefreshToken)
             .map(refreshTokenService::verifyRefreshToken)
             .map(RefreshToken::getUser)// get user field from RefreshToken object
             .map(user -> {
